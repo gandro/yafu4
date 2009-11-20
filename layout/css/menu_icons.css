@@ -1,0 +1,23 @@
+ul#menu li a#menu_upload {
+    background-image: url('../images/menu_upload.png');
+}
+
+ul#menu li.chosen a#menu_upload {
+    background-image: url('../images/menu_upload_chosen.png');
+}
+
+ul#menu li a#menu_paste {
+    background-image: url('../images/menu_paste.png');
+}
+
+ul#menu li.chosen a#menu_paste {
+    background-image: url('../images/menu_paste_chosen.png');
+}
+
+ul#menu li a#menu_search {
+    background-image: url('../images/menu_search.png');
+}
+
+ul#menu li.chosen a#menu_search {
+    background-image: url('../images/menu_search_chosen.png');
+}
