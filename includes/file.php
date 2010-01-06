@@ -6,6 +6,7 @@ define("fs_TAGS", "/tags");
 define("fs_VIEW", "/view");
 
 class fs_info_struct extends struct_fixed_array {
+    var $FileID         = '';
     var $Filename       = "Untitled";
     var $Size           = 0;
     var $Mimetype       = "application/octet-stream";
@@ -96,13 +97,7 @@ function fs_remove_file($fileID) {
         return false;
     }
     
-    foreach(scandir($baseDir) as $item) {
-        if($item != '.' && $item != '..') {
-            unlink($baseDir . '/' . $item);
-        }
-    }
-
-    return rmdir($baseDir);
+    return io_remove_path($baseDir);
 }
 
 
@@ -138,27 +133,28 @@ function fs_get_view_uri($fileID, $prefix = true) {
 
 
 
-
-
-
-function fs_set_info($fileID, fs_info_struct $struct) {
-    return io_write_ini_file(fs_get_basedir($fileID) . fs_INFO, $struct);
+function fs_set_info(fs_info_struct $struct) {
+    return io_write_ini_file(
+        fs_get_basedir($struct['FileID']) . fs_INFO, $struct
+    );
 }
 
-function fs_set_tags($fileID, fs_tags_struct $struct) {
-    return io_write_ini_file(fs_get_basedir($fileID) . fs_tags, $array);
+function fs_set_tags(fs_tags_struct $struct) {
+    return io_write_ini_file(
+        fs_get_basedir($struct['FileID']) . fs_tags, $array
+    );
 }
 
-function fs_set_data($fileID, $source) {
-    if(is_uploaded_file($source)) {
-        return move_uploaded_file($source, fs_get_basedir($fileID) . fs_DATA);
+function fs_set_data($fileID, $sourceURI) {
+    if(is_uploaded_file($sourceURI)) {
+        return move_uploaded_file($sourceURI, fs_get_basedir($fileID) . fs_DATA);
     } else {
-        return copy($source, fs_get_basedir($fileID) . fs_DATA);
+        return copy($sourceURI, fs_get_basedir($fileID) . fs_DATA);
     }
 }
 
-function fs_set_view($fileID, $source) {
-    return copy($source, fs_get_basedir($fileID) . fs_VIEW);
+function fs_set_view($fileID, $sourceURI) {
+    return copy($sourceURI, fs_get_basedir($fileID) . fs_VIEW);
 }
 
 ?>

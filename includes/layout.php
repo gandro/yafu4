@@ -1,16 +1,15 @@
 <?php
 
-function layout_print($content) {
+function layout_print($_PAGE, $_CONTEXT = array()) {
     global $_CONFIG;
-    $layoutDir = $_CONFIG['LayoutDir'];
-    if(!file_exists($layoutDir . $content . '.php')) {
+    if(!file_exists($_CONFIG['LayoutDir'] . $_PAGE . '.php')) {
         trigger_error("Cannot print layout: Content not found", E_USER_WARNING);
         return false;
     }
     
-    include($layoutDir . 'header.php');
-    include($layoutDir . $content . '.php');
-    include($layoutDir . 'footer.php');
+    include($_CONFIG['LayoutDir'] . 'header.php');
+    include($_CONFIG['LayoutDir'] . $_PAGE . '.php');
+    include($_CONFIG['LayoutDir'] . 'footer.php');
 }
 
 function layout_get_http_root() {

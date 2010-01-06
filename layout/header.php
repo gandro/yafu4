@@ -17,10 +17,10 @@
     <li><a href="#" id="menu_upload">
         Datei hochladen
     </a></li>
-    <li class="chosen"><a href="#" id="menu_paste">
+    <li><a href="#" id="menu_paste">
         Text einfügen
     </a></li>
-    <li><a href="#" id="menu_search">
+    <li class="chosen"><a href="?a=search" id="menu_search">
         Upload suchen
     </a></li>
 </ul>

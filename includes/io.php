@@ -107,151 +107,210 @@ function io_lock_path($path) {
 function io_unlock_path($path) {
     global $_CONFIG;
 
-    $lockDir = $_CONFIG['LockDir'] . '/' . sha1($path);
-    @rmdir($lockDir);
+    $lock_dir = $_CONFIG['LockDir'] . '/' . sha1($path);
+    @rmdir($lock_dir);
     @ignore_user_abort(0);
 }
 
-function io_create_csv_file($filename, $header) {
+function io_write_csv_file($filename, array $header, array $data) {
     if(!($csv_file = io_fopen($filename, 'w'))) {
         return false;
     }
-
-    $header_str = "";
-    foreach($header as $column => $length) {
-        $header_str .= substr(str_pad($column, $length), 0, $length);
-        $header_str .= io_CSVDELIMN;
-    }
-    $header_str[strlen($header_str)-1] = PHP_EOL;
-
-    return (fwrite($csv_file, $header_str) !== false) && fclose($csv_file);
-}
-
-function io_scroll_csv_rows($filename, $start=0, $length=-1) {
-    if(!($csv_file = io_fopen($filename, 'r'))
-        || !($header = fgets($csv_file, io_CSVLENGTH))) {
-
-        return false;
-    }
-
-    $row_len = strlen($header);
-    $header = io_parse_csv_header($header);
-
-    $length = ($length >= 0) ? $length : filesize($filename) / $row_len;
-
-    $array = array();
-
-    fseek($csv_file, $row_len * ($start+1));
-    for($i=0; $i<$length; $i++) {
-        if(!($row = fread($csv_file, $row_len))) {
-            break;
-        }
-
-        $array[$i+$start] = io_parse_csv_string($row, $header);
-    }
-    fclose($csv_file);
-    return $array;
-}
-
-function io_select_csv_rows($filename, array $range) {
-    if(!($csv_file = io_fopen($filename, 'r'))
-        || !($header = fgets($csv_file, io_CSVLENGTH))) {
-
-        return false;
-    }
-    $row_len = strlen($header);
-    $header = io_parse_csv_header($header);
-
-
-    $array = array();
-    foreach($range as $row_index) {
-        fseek($csv_file, $row_len * ($row_index+1));
-        if($row = fread($csv_file, $row_len)) {
-            $array[$row_index] = io_parse_csv_string($row, $header);
-        }
-    }
-    fclose($csv_file);
-    return $array;
-}
-
-function io_append_csv_rows($filename, array $rows) {
-    if(!($csv_file = io_fopen($filename, 'r+'))
-        || !($header = fgets($csv_file, io_CSVLENGTH))) {
-
-        return false;
-    }
-    $header = io_parse_csv_header($header);
-
-    fseek($csv_file, 0, SEEK_END);
-    foreach($rows as $row) {
-        fwrite($csv_file, io_generate_csv_string($row, $header));
+    
+    fputcsv($csv_file, $header, io_CSVDELIMN);
+    $header = array_flip($header);
+    foreach($data as $row) {
+        fputcsv($csv_file, array_merge($header, $row), io_CSVDELIMN);
     }
 
     return fclose($csv_file);
 }
 
-function io_insert_csv_rows($filename, array $rows, $position) {
+function io_append_to_csv_file($filename, array $header, array $row) {
+    if(!($csv_file = io_fopen($filename, 'a'))) {
+        return false;
+    }
+    
+    if(filesize($filename) == 0) {
+        fputcsv($csv_file, $header, io_CSVDELIMN);
+    }
 
+    fputcsv($csv_file, array_merge(array_flip($header), $row), io_CSVDELIMN);
+
+    return fclose($csv_file);
 }
 
-function io_delete_csv_rows($filename, array $row_indexes) {
+function io_parse_csv_file($filename) {
+    if(!($csv_file = io_fopen($filename, 'r'))) {
+        return false;
+    }
+
+    $c = 0;
+    $array = array();
+
+    while($row = fgetcsv($csv_file, io_CSVLENGTH, io_CSVDELIMN)) {
+        if($c++ == 0) {
+            $header = $row;
+        } else {
+            $array[$c] = array_combine($header, $row);
+        }
+    }
+
+    fclose($csv_file);
+
+    return $array;
+}
+
+
+function io_query_csv_file($filename, $field, $criterion) {
+    if(!($csv_file = io_fopen($filename, 'r'))) {
+        return false;
+    }
+
+    $c = 0;
+    $array = array();
+
+    while($row = fgetcsv($csv_file, io_CSVLENGTH, io_CSVDELIMN)) {
+        if($c++ == 0) {
+            $header = $row;
+            if(!in_array($field, $header)) {
+                return false;
+            }
+        } else {
+            $row = array_combine($header, $row);
+            if(is_callable($criterion)) {
+                if(call_user_func($criterion, $row[$field])) {
+                    $array[$c] = $row;
+                }
+            } elseif($row[$field] == $criterion) {
+                $array[$c] = $row;
+            }
+        }
+    }
+
+    fclose($csv_file);
+
+    return $array;
+}
+
+function io_select_csv_file($filename, array $range) {
     if(
-        count($row_indexes) == 0 ||
-        !($csv_writer = io_fopen($filename, 'r+')) ||
-        !($header = fgets($csv_writer, io_CSVLENGTH))
+        count($range) == 0 ||
+        !($csv_file = io_fopen($filename, 'r')) || 
+        !($header = fgetcsv($csv_file, io_CSVLENGTH, io_CSVDELIMN))
     ) {
         return false;
     }
 
-    $row_len = strlen($header);
-    sort($row_indexes, SORT_NUMERIC);
-
-    $csv_reader = fopen($filename, 'r');
-    $line_nr = 0;
-    $data_len = $row_len;
-
-
-}
-
-function io_generate_csv_string($array, $header) {
-    $string = "";
-    foreach($header as $column => $length) {
-        if(is_numeric($array[$column])) {
-            $string .= substr(str_pad($array[$column], $length), 0, $length);
-        } else {
-            $string .= '"' . substr($array[$column], 0, $length-2).'"';
-            if(($padding = $length - strlen($array[$column]) - 2) > 0) {
-                $string .= str_repeat(' ', $padding);
-            }
-        }
-        $string .= io_CSVDELIMN;
-    }
-    $string[strlen($string)-1] = PHP_EOL;
-    return $string;
-}
-
-function io_parse_csv_string($string, $header) {
+    $c = 0;
     $array = array();
-    $str_pointer = 0;
-    foreach($header as $column => $length) {
-        $array[$column] = trim(substr($string, $str_pointer, $length));
-        if($array[$column][0] == '"'
-            && $array[$column][strlen($array[$column])-1] == '"') {
 
-            $array[$column] = substr($array[$column], 1, -1);
+    sort($range, SORT_NUMERIC);
+    $cur = array_shift($range);
+
+    while(!feof($csv_file) && $c <= $cur) {
+        if($cur == $c) {
+            $row = fgetcsv($csv_file, io_CSVLENGTH, io_CSVDELIMN);
+            $array[$c] = array_combine($header, $row);
+            $cur = array_shift($range);
+        } else {
+            fgets($csv_file, io_CSVLENGTH);
         }
-        $str_pointer += $length + 1;
+        $c++;
     }
+
+    fclose($csv_file);
     return $array;
 }
 
-function io_parse_csv_header($string) {
-    $string = str_replace(PHP_EOL, '', $string);
-    $header_columns = explode(io_CSVDELIMN, $string);
-    foreach($header_columns as $column) {
-        $header[trim($column)] = strlen($column);
+function io_delete_by_query_from_csv_file($filename, $field, $criterion) {
+    if(!($csv_writer = io_fopen($filename, 'r+'))) {
+        return false;
     }
-    return $header;
+    $csv_reader = fopen($filename, 'r');
+
+    $c = 0;
+    $deleted = 0;
+    $array = array();
+
+    while($row = fgets($csv_reader, io_CSVLENGTH)) {
+        if($c++ == 0) {
+            $header = str_getcsv($row, io_CSVDELIMN);
+            fseek($csv_writer, strlen($row));
+            if(!in_array($field, $header)) {
+                fclose($csv_reader);
+                fclose($csv_writer);
+                return false;
+            }
+            continue;
+        } else {
+            $parsed_row = str_getcsv($row, io_CSVDELIMN);
+            $parsed_row = array_combine($header, $parsed_row);
+            if(is_callable($criterion)) {
+                if(call_user_func($criterion, $parsed_row[$field])) {
+                    $deleted += strlen($row);
+                    continue;
+                }
+            } elseif($parsed_row[$field] == $criterion) {
+                $deleted += strlen($row);
+                continue;
+            }
+        }
+        fwrite($csv_writer, $row);
+    }
+
+    ftruncate($csv_writer, filesize($filename)-$deleted);
+
+    fclose($csv_reader);
+    fclose($csv_writer);
+
+    return ($deleted > 0);
 }
+
+function io_delete_from_csv_file($filename, array $row) {
+    if(!($csv_writer = io_fopen($filename, 'r+'))) {
+        return false;
+    }
+    $csv_reader = fopen($filename, 'r');
+    
+    $found = false;
+    $header = fgetcsv($csv_reader, io_CSVLENGTH, io_CSVDELIMN);
+    $row_string = string_to_csv($row, $header);
+
+    while(($line = fgets($csv_reader, io_CSVLENGTH))) {
+        if($line == $row_string) {
+            $found = true;
+            break;
+        }
+    }
+    
+    if($found) {
+        fseek($csv_writer, ftell($csv_reader) - strlen($row_string));
+        stream_copy_to_stream($csv_reader, $csv_writer);
+        ftruncate($csv_writer, ftell($csv_reader) - strlen($row_string));
+    }
+
+    fclose($csv_reader);
+    fclose($csv_writer);
+    
+    return $found;
+}
+
+function io_remove_path($path) {
+    if (is_dir($path)) {
+        $files = array_diff(scandir($path), array('.', '..'));
+
+        foreach($files as $file) {
+            io_remove_path(realpath($path) . '/' . $file);
+        }
+
+        return rmdir($path);
+    } elseif(is_file($path)) {
+        return unlink($path);
+    }
+
+    return false;
+}
+
 
 ?>

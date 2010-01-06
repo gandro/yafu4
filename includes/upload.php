@@ -4,25 +4,24 @@ function upload_from_rfc1867($fileArray, $publicUpload = true) {
     if(!upload_check_rfc1867_array($fileArray)) {
         return false;
     }
-    $fileID = fs_generate_id();
     $fileInfo = new fs_info_struct();
-    
+    $fileInfo['FileID'] = fs_generate_id();
     $fileInfo['Filename'] = string_to_unicode($fileArray['name']);
-    if(strlen($fileInfo['Filename']) > 96) {
+    /*if(strlen($fileInfo['Filename']) > 96) {
         $fileInfo['Filename'] = substr($fileInfo['Filename'], 0, 92);
         $fileInfo['Filename'] .= substr($fileInfo['Filename'], -4);
-    }
+    } FIXME not needed..? */
     $fileInfo['Size'] = (int) $fileInfo['size'];
     $fileInfo['CreationTime'] = time();
     $fileInfo['Owner'] = session_get_user();
     $fileInfo['Public'] = (bool) $publicUpload;
     
     if(
-        fs_allocate_space($fileID) && 
-        fs_set_info($fileID, $fileInfo) &&
-        fs_set_data($fileID, $fileArray['tmp_name'])
+        fs_allocate_space($fileInfo['FileID']) && 
+        fs_set_info($fileInfo) &&
+        fs_set_data($fileInfo['FileID'], $fileArray['tmp_name'])
     ) {
-        return $fileID;
+        return $fileInfo;
     }
     return false;
 }

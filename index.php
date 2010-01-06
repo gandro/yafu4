@@ -7,13 +7,33 @@ switch($action) {
         if(!isset($_FILES['file'])) {
             trigger_error("Invalid Request", E_USER_ERROR);
         }
-        var_dump(upload_from_rfc1867($_FILES['file'], true));
+        var_dump($f=upload_from_rfc1867($_FILES['file'], true));
+        search_add_to_index($f);
+        break;
+    case 'search':
+        $context['date'] = (isset($_GET['st']) && is_numeric($_GET['st']))
+                             ? $_GET['st'] : time();
+        layout_print("search_files", $context);
         break;
     case 'index':
     default:
         layout_print("upload_form");
         break;
 }
+//var_dump();
+var_export(search_remove_from_index(fs_get_info_struct("d2a8a424")));
+//var_dump(io_delete_from_csv_file("test.csv~", "Filename", "HAHA.txt"));
+//var_dump(io_delete_from_csv_file("test.csv~", "Contact", "Nigel \"Shan\" Shanford"));
+/*var_export(  io_append_to_csv_file("test.csv~", array("Filename", "Size", "Public"),
+
+  array (
+    'Filename' => 'Dateiname.txt',
+    'Size' => '2326',
+    'Public' => '1',
+  )));
+*/
+//echo search_create_index();
+//var_dump(search_get_list_for_date(1250712669));
 /*$header = io_parse_csv_header("Hallo     ;Welt  ;Test    ");
 $array = array("Hallo" => ".66o7", "Welt" => "abcdefghijklmopq", "Test" => 2332425234234);
 echo ($string = io_generate_csv_string($array, $header));

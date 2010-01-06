@@ -42,4 +42,20 @@ function string_filesize_to_bytes($string) {
     return $value;
 }
 
+function string_to_csv(array $row, array $header) {
+    $sorted_row = array_merge(array_flip($header), $row);
+    if(count($sorted_row) != count($row)) {
+        return false;
+    }
+
+    $memory = fopen("php://memory", 'r+');
+    fputcsv($memory, $sorted_row, io_CSVDELIMN);
+    rewind($memory);
+    
+    $csv_string = stream_get_contents($memory);
+    fclose($memory);
+    
+    return $csv_string;
+}
+
 ?>

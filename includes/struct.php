@@ -14,7 +14,7 @@ abstract class struct_array implements arrayaccess {
         $this->$offset = $value;
     }
     public function offsetExists($offset) {
-        return property_exists($this->$offset);
+        return property_exists($this, $offset);
     }
     public function offsetUnset($offset) {
         return false;
@@ -22,6 +22,7 @@ abstract class struct_array implements arrayaccess {
     public function offsetGet($offset) {
         return property_exists($this, $offset) ? $this->$offset : null;
     }
+
 
 }
 
@@ -53,6 +54,10 @@ abstract class struct_fixed_array extends struct_array {
 
 function struct_is_array($variable) {
     return (is_array($variable) || $variable instanceof ArrayAccess);
+}
+
+function struct_as_array(struct_array $variable) {
+    return get_object_vars($variable);
 }
 
 ?>

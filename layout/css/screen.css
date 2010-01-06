@@ -121,6 +121,29 @@ div#footer ul li {
     display: inline;
 }
 
+ul#timeline {
+    padding: 0;
+    margin: 0 auto;
+    text-align: center;
+    border-bottom: thin dotted #84b465;
+}
+
+ul#timeline li {
+    display: inline;
+    font-size: small;
+    padding: 0 1ex;
+}
+
+ul#timeline li a {
+    color: #8f8f8f;
+}
+
+ul#timeline li a:hover {
+    color: #808080;
+    font-weight: bold;
+    text-decoration: none;
+}
+
 /***********************/
 
 form#upload {
