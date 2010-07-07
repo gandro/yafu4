@@ -5,19 +5,15 @@ function upload_from_rfc1867($fileArray, $publicUpload = true) {
         return false;
     }
     $fileInfo = new fs_info_struct();
-    $fileInfo['FileID'] = fs_generate_id();
-    $fileInfo['Filename'] = string_to_unicode($fileArray['name']);
-    /*if(strlen($fileInfo['Filename']) > 96) {
-        $fileInfo['Filename'] = substr($fileInfo['Filename'], 0, 92);
-        $fileInfo['Filename'] .= substr($fileInfo['Filename'], -4);
-    } FIXME not needed..? */
-    $fileInfo['Size'] = (int) $fileInfo['size'];
-    $fileInfo['CreationTime'] = time();
-    $fileInfo['Owner'] = session_get_user();
-    $fileInfo['Public'] = (bool) $publicUpload;
-    
+    $fileInfo['FileID']         = fs_generate_id();
+    $fileInfo['Filename']       = string_to_unicode($fileArray['name']);
+    $fileInfo['Size']           = (int) $fileArray['size'];
+    $fileInfo['CreationTime']   = time();
+    $fileInfo['Owner']          = session_get_user();
+    $fileInfo['Public']         = (bool) $publicUpload;
+
     if(
-        fs_allocate_space($fileInfo['FileID']) && 
+        fs_allocate_space($fileInfo['FileID']) &&
         fs_set_info($fileInfo) &&
         fs_set_data($fileInfo['FileID'], $fileArray['tmp_name'])
     ) {
@@ -45,7 +41,7 @@ function upload_check_rfc1867_array($fileArray) {
 
     if(isset($fileArray['error']) && $fileArray['error'] !=  UPLOAD_ERR_OK) {
         switch($fileArray['error']) {
-            case UPLOAD_ERR_INI_SIZE: 
+            case UPLOAD_ERR_INI_SIZE:
                 trigger_error(
                     "The uploaded file exceeds the filesize limit on the server.",
                     E_USER_WARNING

@@ -41,7 +41,7 @@ function io_fopen($filename, $mode, $use_include_path=false, $context=null) {
     return $fd;
 }
 
-function io_parse_ini_file($filename, $process_sections= false) {
+function io_parse_ini_file($filename, $process_sections = false) {
 
     if($iniFile = io_fopen($filename, 'r')) {
         $array = parse_ini_file($filename, $process_sections);
@@ -51,7 +51,7 @@ function io_parse_ini_file($filename, $process_sections= false) {
     return false;
 }
 
-function io_write_ini_file($filename, $array, 
+function io_write_ini_file($filename, $array,
                             $process_sections = false, $startcomment = "") {
 
     if(!($iniFile = io_fopen($filename, 'w'))) {
@@ -99,7 +99,7 @@ function io_lock_path($path) {
 
     do {
         if(@mkdir($lock_dir) || (time() - $start_time) > 3) {
-            break;        
+            break;
         }
     } while(usleep(50));
 }
@@ -116,7 +116,7 @@ function io_write_csv_file($filename, array $header, array $data) {
     if(!($csv_file = io_fopen($filename, 'w'))) {
         return false;
     }
-    
+
     fputcsv($csv_file, $header, io_CSVDELIMN);
     $header = array_flip($header);
     foreach($data as $row) {
@@ -130,7 +130,7 @@ function io_append_to_csv_file($filename, array $header, array $row) {
     if(!($csv_file = io_fopen($filename, 'a'))) {
         return false;
     }
-    
+
     if(filesize($filename) == 0) {
         fputcsv($csv_file, $header, io_CSVDELIMN);
     }
@@ -196,7 +196,7 @@ function io_query_csv_file($filename, $field, $criterion) {
 function io_select_csv_file($filename, array $range) {
     if(
         count($range) == 0 ||
-        !($csv_file = io_fopen($filename, 'r')) || 
+        !($csv_file = io_fopen($filename, 'r')) ||
         !($header = fgetcsv($csv_file, io_CSVLENGTH, io_CSVDELIMN))
     ) {
         return false;
@@ -272,7 +272,7 @@ function io_delete_from_csv_file($filename, array $row) {
         return false;
     }
     $csv_reader = fopen($filename, 'r');
-    
+
     $found = false;
     $header = fgetcsv($csv_reader, io_CSVLENGTH, io_CSVDELIMN);
     $row_string = string_to_csv($row, $header);
@@ -283,7 +283,7 @@ function io_delete_from_csv_file($filename, array $row) {
             break;
         }
     }
-    
+
     if($found) {
         fseek($csv_writer, ftell($csv_reader) - strlen($row_string));
         stream_copy_to_stream($csv_reader, $csv_writer);
@@ -292,7 +292,7 @@ function io_delete_from_csv_file($filename, array $row) {
 
     fclose($csv_reader);
     fclose($csv_writer);
-    
+
     return $found;
 }
 

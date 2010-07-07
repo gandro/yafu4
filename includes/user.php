@@ -1,7 +1,6 @@
 <?php
 
 define("user_INFO",     "/info");
-define("user_LIST",     "/list");
 
 class user_info_struct extends struct_fixed_array {
     var $Password       = null;
@@ -33,8 +32,6 @@ function user_create($username, $password, $email) {
         trigger_error("Cannot create user: mkdir() failed!", E_USER_WARNING);
         return false;
     }
-
-    touch($basePath . user_LIST);
     
     $userInfo = new user_info_struct(array(
         'Password'      => user_get_password_hash($password),
@@ -63,7 +60,7 @@ function user_delete($username) {
 }
 
 function user_validate_name($username) {
-    if(($len = strlen($username)) > 32) {
+    if(($len = strlen($username)) > 32 || $len == 0) {
         return false;
     }
 
@@ -93,6 +90,7 @@ function user_set_info($username, user_info_struct $struct) {
     return io_write_ini_file(user_get_basedir($username) . user_INFO, $struct);
 }
 
+/* TODO: gross/kleinschreibung auf windosen? */
 function user_get_basedir($username) {
     global $_CONFIG;
     if(user_validate_name($username)) {

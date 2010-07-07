@@ -42,6 +42,37 @@ function string_filesize_to_bytes($string) {
     return $value;
 }
 
+function string_bytes_to_filesize($size) {
+    global $_CONFIG;
+
+    /* Note: Since php doesn't have support for large intergers,
+     * calculating any filesize larger than 2 GiB on a 32 bit machine
+     * may does not work as expected.
+     */
+
+    if($_CONFIG['SiPrefixes']) {
+        $unit = array('B', 'kB', 'MB', 'GB');
+        $base = 1000;
+    } else {
+        $unit = array('B', 'KiB', 'MiB', 'GiB');
+        $base = 1024;
+    }
+
+    for($i=0; $i<=count($unit); $i++) {
+        $step = (int) pow($base, $i);
+        if($size < $step*$base) {
+            if($size%$step == 0) {
+                return $size/$step.($nbsp?'&nbsp;':' ').$unit[$i];
+            } else {
+                $locale = localeconv();
+                return number_format($size/$step, 2,
+                    $locale['decimal_point'], $locale['thousands_sep']).
+                    ' '.$unit[$i];
+            }
+        }
+    }
+}
+
 function string_to_csv(array $row, array $header) {
     $sorted_row = array_merge(array_flip($header), $row);
     if(count($sorted_row) != count($row)) {

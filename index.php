@@ -1,44 +1,104 @@
 <?php
 include("global.php");
+
 $action = empty($_GET['a']) ? '' : $_GET['a'];
 
-switch($action) {
-    case 'upload':
-        if(!isset($_FILES['file'])) {
-            trigger_error("Invalid Request", E_USER_ERROR);
-        }
-        var_dump($f=upload_from_rfc1867($_FILES['file'], true));
-        search_add_to_index($f);
-        break;
-    case 'search':
-        $context['date'] = (isset($_GET['st']) && is_numeric($_GET['st']))
-                             ? $_GET['st'] : time();
-        layout_print("search_files", $context);
-        break;
-    case 'index':
-    default:
-        layout_print("upload_form");
-        break;
-}
-//var_dump();
-var_export(search_remove_from_index(fs_get_info_struct("d2a8a424")));
-//var_dump(io_delete_from_csv_file("test.csv~", "Filename", "HAHA.txt"));
-//var_dump(io_delete_from_csv_file("test.csv~", "Contact", "Nigel \"Shan\" Shanford"));
-/*var_export(  io_append_to_csv_file("test.csv~", array("Filename", "Size", "Public"),
+do {
+    switch($action) {
+        case 'upload':
+            if(!isset($_FILES['file'])) {
+                trigger_error("Invalid Request", E_USER_ERROR);
+            }
+            $fileInfo = upload_from_rfc1867($_FILES['file'], true);
+            if($fileInfo != false) {
+                search_add_to_index($fileInfo);
+                $action = 'info';
+                continue(2);
+            }
+            break;
 
-  array (
-    'Filename' => 'Dateiname.txt',
-    'Size' => '2326',
-    'Public' => '1',
-  )));
-*/
-//echo search_create_index();
-//var_dump(search_get_list_for_date(1250712669));
-/*$header = io_parse_csv_header("Hallo     ;Welt  ;Test    ");
-$array = array("Hallo" => ".66o7", "Welt" => "abcdefghijklmopq", "Test" => 2332425234234);
-echo ($string = io_generate_csv_string($array, $header));
-print_r(io_parse_csv_string($string, $header));*/
-//io_create_csv_file("test.txt", array("Hallo" => 10, "Testdings" => 4, "Welt" => 23));
-//var_dump(io_append_csv_rows("test.txt", array(    array("Test" => "3", "Hallo" => "Zeile 3", "Welt" => "ja"))));
-//var_dump(io_select_csv_rows("test.txt", array(1, 3)));
+        case 'search':
+            $selected = isset($_GET['t']) ? $_GET['t'] : time();
+            $selected = search_get_first_of_period($selected);
+
+            $until = isset($_GET['e']) ? (int) $_GET['e'] : 1;
+
+            $query = isset($_GET['q']) ? trim($_GET['q']) : '';
+
+            if($until > 1) {
+                $range = search_get_range_of_timestamps($selected,
+                            search_get_timestamp_by_offset(
+                                $selected, -1*$until
+                            )
+                        );
+            } else {
+                $range = array($selected);
+            }
+
+
+            if(strlen($query) > 0) {
+                $result = search_full_text($query, $range);
+            } else {
+                $result = array();
+                foreach($range as $date) {
+                    $result = array_merge($result, search_get_list_for_date($date));
+                }
+            }
+
+            $timeline = search_get_timeline($range[0], 7, $range);
+            $date_pos = array_search($range[0], $timeline);
+
+            layout_print("search", array(
+                'selected' => $selected,
+                'until' => $until,
+                'query' => htmlspecialchars($query),
+                'result' => &$result,
+                'timeline' => &$timeline
+            ));
+            break;
+
+        case 'info':
+            /* if $fileInfo is set, it's a new upload */
+            if(isset($fileInfo)) {
+                $isPrivate = true;
+            } else {
+                $fileID = isset($_GET['f']) ? trim($_GET['f']) : null;
+                $fileInfo = fs_get_info_struct($fileID);
+                $isPrivate = !user_validate_name($fileInfo['Owner']) ? false :
+                                ($fileInfo['Owner'] == session_get_user());
+            }
+
+            layout_print("fileinfo", array(
+                'info' => $fileInfo,
+                'private' => $isPrivate
+            ));
+            break;
+
+        case 'login':
+            layout_print("login");
+            break;
+
+        case 'logout':
+            session_logout("login");
+            break;
+
+        case 'loggedin':
+            $username = isset($_POST['username']) ? $_POST['username'] : '';
+            $password = isset($_POST['password']) ? $_POST['password'] : '';
+            $permanent = isset($_POST['permanent']) ? true : false;
+
+            if(session_login($username, $password, $permanent)) {
+                echo("Logged in!");
+            } else {
+                echo("Error!");
+            }
+
+        case 'index':
+        default:
+            layout_print("upload_form");
+            break;
+    }
+    break;
+} while(true);
+
 ?>

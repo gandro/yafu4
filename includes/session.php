@@ -24,6 +24,7 @@ function session_login($username, $password, $permanent = false) {
             user_set_info($username, $userInfo)
         );
     }
+
     io_unlock_path($userBaseDir);
     return $loginSuccess;
 }
